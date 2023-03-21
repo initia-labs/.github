@@ -1,0 +1,58 @@
+name: Publish to Cloudflare Pages
+
+env:
+  CF_PAGES_PROJECT_NAME: CHANGEME # ex: "explorer"
+  PNPM_WORKSPACE_PACKAGE_NAME: CHANGME # ex: "explorer"
+  DIST_FOLDER: CHANGEME # ex: "./apps/explorer/dist"
+
+on:
+  push:
+    branches:
+      - $default-branch
+    pull_request:
+      - $default-branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build package
+        run: pnpm --filter "$PNPM_WORKSPACE_PACKAGE_NAME" build
+
+      - name: Publish
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages publish --project-name="$CF_PAGES_PROJECT_NAME" "$DIST_FOLDER"

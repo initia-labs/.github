@@ -1,0 +1,12 @@
+{
+    "name": "Publish pnpm monorepo member to Cloudflare Pages",
+    "description": "Build and publish a pnpm monorepo member to Cloudflare Pages using wrangler",
+    "iconName": "repo-push",
+    "categories": [
+        "deployment",
+        "pages"
+    ],
+    "filePatterns": [
+        "pnpm-workspace.yaml$"
+    ]
+}
